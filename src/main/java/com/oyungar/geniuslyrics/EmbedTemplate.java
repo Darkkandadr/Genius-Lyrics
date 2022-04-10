@@ -18,7 +18,6 @@ public class EmbedTemplate {
         embedBuilder.setDescription(lyrics);
         embedBuilder.setFooter("Requested by " + requestor.getName(), requestor.getAvatarUrl());
         return embedBuilder;
-
     }
 
     /* lyrics.replace("[Köprü]", "**[Köprü]**");
