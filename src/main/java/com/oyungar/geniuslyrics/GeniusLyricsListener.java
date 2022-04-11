@@ -6,6 +6,8 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.NoSuchElementException;
 
 public class GeniusLyricsListener extends ListenerAdapter {
@@ -33,12 +35,15 @@ public class GeniusLyricsListener extends ListenerAdapter {
                                             + "**message limit of Discord** "
                                             + "you can visit [Genius Page of "+ searchResult.getTitle() +"]"
                                             + "(" + searchResult.getUrl() + ")").addFile(is, "too-long.png").queue();
+                            System.out.println("[DCLOG " + getTime() +  " ] DescriptionTooLongException for " +
+                                    songName + " at " + event.getGuild().getName());
                         }
                     }
                     else{
                         // If the lyrics are not too long, then send them
                         var embedContent = EmbedTemplate.embedBuilder(searchResult, event.getUser());
                         event.getHook().sendMessageEmbeds(embedContent.build()).queue();
+                        System.out.println("[DCLOG " + getTime() +  " ] Lyrics for " + songName + " at " + event.getGuild().getName());
                     }
                 }
             }
@@ -46,7 +51,7 @@ public class GeniusLyricsListener extends ListenerAdapter {
                 System.out.println("[GENIUSAPI] Error: " + e.getMessage());
             }
             catch (NoSuchElementException noSuchElementException){
-                System.out.println("[GENIUSAPI] Error: NoSuchElementException for " + songName);
+                System.out.println("[GENIUSAPI " + getTime() + " ] Error: NoSuchElementException for " + songName + " at " + event.getGuild().getName());
                 InputStream is = getClass().getClassLoader().getResourceAsStream("images/not-found.png");
                 if (is != null) {
                     event.getHook().sendMessage(":warning: No lyrics found for " + songName)
@@ -54,5 +59,11 @@ public class GeniusLyricsListener extends ListenerAdapter {
                 }
             }
         }
+    }
+
+    public final String getTime(){
+        var myDateObj = LocalDateTime.now();
+        var myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        return myDateObj.format(myFormatObj);
     }
 }
