@@ -24,6 +24,7 @@ public class GeniusLyrics {
         jda.awaitReady();
         jda.upsertCommand("lyrics", "Learn the lyrics of the song").addOption(OptionType.STRING,"song", "The song you want to learn the lyrics of", true).queue();
         jda.upsertCommand("help", "Help for your highness").queue();
+        jda.upsertCommand("invite", "Invite me to your server").queue();
         PrintStream stream = new PrintStream(new FileOutputStream("console.log", true));
         System.setOut(stream);
         infoOut(jda);
@@ -32,8 +33,9 @@ public class GeniusLyrics {
     private static void infoOut(@NotNull JDA jda) {
         var infoChannel = jda.getTextChannelById("963043965949583391");
         assert infoChannel != null;
-        infoChannel.sendMessage("The guilds that i serve:").queue();
-        jda.getGuilds().forEach(guild -> {
+        var guilds = jda.getGuilds();
+        infoChannel.sendMessage("The guilds (" + guilds.size() +  ") that i serve:").queue();
+        guilds.forEach(guild -> {
             infoChannel.sendMessage("Guild: **" + guild.getName() + "** Users: **" + guild.getMemberCount() + "**").queue();
         } );
     }
