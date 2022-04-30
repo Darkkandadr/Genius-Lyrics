@@ -2,9 +2,11 @@ package com.oyungar.geniuslyrics;
 
 import core.GLA;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +17,7 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 public class GeniusLyricsListener extends ListenerAdapter {
 
@@ -22,47 +25,24 @@ public class GeniusLyricsListener extends ListenerAdapter {
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
         // Lyrics command
         if (event.getName().equals("lyrics")){
-            var geniusApi = new GLA();
+            event.deferReply().queue();
             var songName = event.getOption("song").getAsString();
-            try {
-                event.deferReply().queue();
-                var searchResult = geniusApi.search(songName).getHits().getFirst();
+            getLyrics(event, songName);
+        }
 
-                // If search result is null, then the song was not found
-                if (searchResult == null || searchResult.getUrl().isEmpty()){return;}
-
-                // If search result is not null, then the song was found
-                if (!searchResult.getUrl().isEmpty()){
-                    if (searchResult.fetchLyrics().toCharArray().length > 4096) {
-                        // If the lyrics are too long, then send a message saying so
-                        InputStream is = getClass().getClassLoader().getResourceAsStream("images/too-long.png");
-                        if (is != null) {
-                            event.getHook()
-                                    .sendMessage(":warning: Lyrics of the sound is reaching "
-                                            + "**message limit of Discord** "
-                                            + "you can visit [Genius Page of "+ searchResult.getTitle() +"]"
-                                            + "(" + searchResult.getUrl() + ")").addFile(is, "too-long.png").queue();
-                            System.out.println("[DCLOG " + getTime() +  " ] DescriptionTooLongException for " +
-                                    songName + " at " + event.getGuild().getName());
-                        }
-                    }
-                    else{
-                        // If the lyrics are not too long, then send them
-                        var embedContent = EmbedTemplate.embedBuilder(searchResult, event.getUser());
-                        event.getHook().sendMessageEmbeds(embedContent.build()).queue();
-                        System.out.println("[DCLOG " + getTime() +  " ] Lyrics for " + songName + " at " + event.getGuild().getName());
-                    }
-                }
+        // Now Playing command
+        else if (event.getName().equals("nowplaying")){
+            event.deferReply().queue();
+            var spotifyTrack = getSpotifyTrack(event.getMember());
+            if (spotifyTrack != null){
+                getLyrics(event, spotifyTrack);
             }
-            catch (IOException e){
-                System.out.println("[GENIUSAPI] Error: " + e.getMessage());
-            }
-            catch (NoSuchElementException noSuchElementException){
-                System.out.println("[GENIUSAPI " + getTime() + " ] Error: NoSuchElementException for " + songName + " at " + event.getGuild().getName());
-                InputStream is = getClass().getClassLoader().getResourceAsStream("images/not-found.png");
+            else {
+                InputStream is = getClass().getClassLoader().getResourceAsStream("images/not-listening-to-spotify.png");
                 if (is != null) {
-                    event.getHook().sendMessage(":warning: No lyrics found for " + songName)
-                            .addFile(is, "not-found.png").queue();
+                    event.getHook().sendMessage(":warning: You are not currently listening to Spotify" +
+                                    " or your Discord activity for Spotify is not visible.")
+                                    .addFile(is, "not-listening-to-spotify.png").queue();
                 }
             }
         }
@@ -100,7 +80,66 @@ public class GeniusLyricsListener extends ListenerAdapter {
         System.out.println("[DCLOG " + getTime() + " ] Left guild named: " + event.getGuild().getName());
     }
 
+    // Search for the lyrics of a song
+    private void getLyrics(@NotNull SlashCommandInteractionEvent event, String songName) {
+        try {
+            var geniusApi = new GLA();
+            var searchResult = geniusApi.search(songName).getHits().getFirst();
 
+            // If search result is null, then the song was not found
+            if (searchResult == null || searchResult.getUrl().isEmpty()){return;}
+
+            // If search result is not null, then the song was found
+            if (!searchResult.getUrl().isEmpty()){
+                if (searchResult.fetchLyrics().toCharArray().length > 4096) {
+                    // If the lyrics are too long, then send a message saying so
+                    InputStream is = getClass().getClassLoader().getResourceAsStream("images/too-long.png");
+                    if (is != null) {
+                        event.getHook()
+                                .sendMessage(":warning: Lyrics of the sound is reaching "
+                                        + "**message limit of Discord** "
+                                        + "you can visit [Genius Page of "+ searchResult.getTitle() +"]"
+                                        + "(" + searchResult.getUrl() + ")").addFile(is, "too-long.png").queue();
+                        System.out.println("[DCLOG " + getTime() +  " ] DescriptionTooLongException for " +
+                                songName + " at " + event.getGuild().getName());
+                    }
+                }
+                else{
+                    // If the lyrics are not too long, then send them
+                    var embedContent = EmbedTemplate.embedBuilder(searchResult, event.getUser());
+                    event.getHook().sendMessageEmbeds(embedContent.build()).queue();
+                    System.out.println("[DCLOG " + getTime() +  " ] Lyrics for " + songName + " at " + event.getGuild().getName());
+                }
+            }
+        }
+        catch (IOException e){
+            System.out.println("[GENIUSAPI] Error: " + e.getMessage());
+        }
+        catch (NoSuchElementException noSuchElementException){
+            System.out.println("[GENIUSAPI " + getTime() + " ] Error: NoSuchElementException for " + songName + " at " + event.getGuild().getName());
+            InputStream is = getClass().getClassLoader().getResourceAsStream("images/not-found.png");
+            if (is != null) {
+                event.getHook().sendMessage(":warning: No lyrics found for " + songName)
+                        .addFile(is, "not-found.png").queue();
+            }
+        }
+    }
+
+    // Get Member's Spotify Current Playing Track
+    private String getSpotifyTrack(Member member){
+        var spotify = member.getActivities().stream()
+                .filter(activity -> activity.getName().equals("Spotify"))
+                .findFirst()
+                .orElse(null);
+        if (spotify != null){
+            var trackName = Objects.requireNonNull(spotify.asRichPresence()).getDetails();
+            var trackArtist = Objects.requireNonNull(spotify.asRichPresence()).getState();
+            return trackName + " " + trackArtist;
+        }
+        return null;
+    }
+
+    // Gets the current time
     private String getTime(){
         var myDateObj = LocalDateTime.now();
         var myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
