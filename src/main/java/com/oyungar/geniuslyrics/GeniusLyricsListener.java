@@ -55,6 +55,7 @@ public class GeniusLyricsListener extends ListenerAdapter {
                     .setThumbnail("https://assets.genius.com/images/apple-touch-icon.png")
                     .setColor(Color.yellow)
                     .addField("Lyrics Command", "`/lyrics <song name>`", false)
+                    .addField("Now Playing Command", "`/nowplaying`", false)
                     .addField("Invite Command", "`/invite`", false)
                     .addField("Help Command", "`/help`", false);
             event.replyEmbeds(embedBuilder.build()).queue();
