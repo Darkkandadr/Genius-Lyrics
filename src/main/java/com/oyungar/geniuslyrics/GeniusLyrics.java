@@ -58,17 +58,8 @@ public class GeniusLyrics {
         } );
     }
 
-    private static String getToken() throws IOException {
-        var file = new File("token.lyrics");
-        if (!file.exists()){
-            file.createNewFile();
-            System.out.println("[SYSTEM] Discord bot token file doesn't found. 'token.lyrics' file created.");
-            return null;
-        }
-
-        var reader = new BufferedReader(new FileReader("token.lyrics"));
-        var token = reader.readLine();
-        reader.close();
-        return token;
+    private static String getToken() {
+        // Get token from system environment variables
+        return System.getenv("TOKEN");
     }
 }
