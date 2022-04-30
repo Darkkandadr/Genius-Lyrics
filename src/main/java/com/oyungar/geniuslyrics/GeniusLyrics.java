@@ -7,17 +7,13 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.login.LoginException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 
 
 public class GeniusLyrics {
 
-    private static final String BOT_TOKEN = "OTA3OTc5NzY1OTA5MTgwNTA2.YYvEDQ.D-4i3u_QxGu2kf74O5NXDhCEGzI";
-
     public static void main(String[] args) throws LoginException, InterruptedException, IOException {
-         JDA jda = JDABuilder.createDefault(BOT_TOKEN)
+         JDA jda = JDABuilder.createDefault(getToken())
                  .addEventListeners(new GeniusLyricsListener())
                  .setActivity(Activity.playing("/lyrics for search a song's lyrics"))
                  .build();
@@ -40,4 +36,17 @@ public class GeniusLyrics {
         } );
     }
 
+    private static String getToken() throws IOException {
+        var file = new File("token.lyrics");
+        if (!file.exists()){
+            file.createNewFile();
+            System.out.println("[SYSTEM] Discord bot token file doesn't found. 'token.lyrics' file created.");
+            return null;
+        }
+
+        var reader = new BufferedReader(new FileReader("token.lyrics"));
+        var token = reader.readLine();
+        reader.close();
+        return token;
+    }
 }
