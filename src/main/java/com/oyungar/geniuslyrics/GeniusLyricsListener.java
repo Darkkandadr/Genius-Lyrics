@@ -86,7 +86,6 @@ public class GeniusLyricsListener extends ListenerAdapter {
             event.reply("Click the button for invite me to your server!")
                     .addActionRow(Button.link(inviteLink, "Invite me to your server")).queue();
         }
-
     }
 
     // Guild Join Event
